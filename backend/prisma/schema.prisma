@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  invoices  Invoice[]
+  investments Investment[]
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  ownerId       String
+  owner         User     @relation(fields: [ownerId], references: [id])
+  amount        Decimal
+  currency      String
+  status        InvoiceStatus @default(UPLOADED)
+  aiScore       Int?
+  aiBand        String?
+  aiExplanation String?
+  ipfsHash      String?
+  tokenId       String?
+  blockchainTx  String?
+  riskCreatedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  investments   Investment[]
+}
+
+model Investment {
+  id         String   @id @default(cuid())
+  investorId String
+  investor   User     @relation(fields: [investorId], references: [id])
+  invoiceId  String
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id])
+  amount     Decimal
+  expectedReturn Decimal
+  status     InvestmentStatus @default(ACTIVE)
+  createdAt  DateTime @default(now())
+}
+
+enum Role {
+  MSME
+  INVESTOR
+  ADMIN
+}
+
+enum InvoiceStatus {
+  UPLOADED
+  ANALYZED
+  TOKENIZED
+  FUNDED
+  SETTLED
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  SETTLED
+  DEFAULTED
+}
+
