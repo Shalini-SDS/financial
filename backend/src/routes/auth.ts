@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
 import { createUser, loginUser } from '../services/authService';
 import { loginSchema, signupSchema } from '../utils/validation';
 
@@ -32,6 +33,24 @@ authRouter.post('/signup', async (req, res) => {
 
 authRouter.post('/login', async (req, res) => {
   try {
+    // DUMMY LOGIN MODE: Accept any credentials for testing (bypasses validation)
+    // Set DUMMY_AUTH=false in .env to disable this
+    const DUMMY_MODE = process.env.DUMMY_AUTH !== 'false'; // Default to true for testing
+    if (DUMMY_MODE) {
+      const { email = '', password = '' } = req.body;
+      // Accept any email/password, even empty ones
+      console.log('[DUMMY LOGIN] Bypassing authentication for:', email || 'any email');
+      // Determine role from email or default to MSME
+      let role: 'MSME' | 'INVESTOR' | 'ADMIN' = 'MSME';
+      if (email.toLowerCase().includes('investor')) role = 'INVESTOR';
+      if (email.toLowerCase().includes('admin')) role = 'ADMIN';
+      
+      const payload = { id: 'dummy-' + Date.now(), role };
+      const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: '2h' });
+      return res.json({ token, user: payload });
+    }
+
+    // Normal validation and login flow
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: 'Validation failed', details: parsed.error.errors });

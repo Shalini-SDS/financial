@@ -31,3 +31,4 @@ Write-Host "`nUpdated .env file:"
 Get-Content $envFile | Select-String -Pattern "DATABASE_URL|MONGO_URL"
 
 
+
